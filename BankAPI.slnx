@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Itens de Solução/">
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/" />
+  <Project Path="BankAPI/BankAPI.csproj" />
+  <Project Path="BankShared/BankShared.csproj" />
+</Solution>
