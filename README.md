@@ -3,6 +3,8 @@ Estudo de criação de API para um banco virtual em C# com ASP.NET Core e Entity
 
 ## Funcionalidades
 - Cadastro de usuários
+- Login de contas
+- Transferência de saldo
 
 ## Tecnologias 
 - C# 

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using BankShared;
 using BankAPI.Entities;
 using BankAPI.Methods;
+using BankAPI.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,14 +34,51 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapPost("/users/create-account", (CreateAccountRequest request, UserServices user) =>
+User? CurrentUser = null;
+
+app.MapPost("/users/create-account", async (CreateAccountRequest request, UserServices user) =>
 {
-    var userCreated = user.CreateAccount(request.Username, request.PasswordLogin, request.PasswordTransaction);
+    var userCreated = await user.CreateAccount(request.Username, request.PasswordLogin, request.PasswordTransaction);
 
     if (userCreated == null)
     {
         return Results.BadRequest("Account already exists");
     }
-    return Results.Accepted("Account created sucessfully");
+    CurrentUser = userCreated;
+    return Results.Accepted("Account created successfully");
+});
+
+app.MapPost("/users/login", async (LoginRequest request, UserServices user) =>
+{
+    var userLogin = await user.LoginAccount(request.Username, request.PasswordLogin);
+
+    if (userLogin == null)
+    {
+        return Results.BadRequest("Account not exists"); 
+    }
+    CurrentUser = userLogin;
+    return Results.Ok("Login successfully"); 
+});
+
+app.MapPatch("/users/transfer-money", async (TransferMoneyRequest request, UserServices user) =>
+{
+    TransferResult result = await user.TransferMoney(CurrentUser, request.MoneyToTransfer, request.UserToTransfer, request.PasswordTransaction);
+
+    if (CurrentUser == null) 
+    {
+        return Results.Unauthorized();
+    }
+    return result switch
+    {
+        TransferResult.UserNotFound => Results.BadRequest("User not found"),
+
+        TransferResult.InvalidPassword => Results.Unauthorized(),
+
+        TransferResult.InsufficientBalance => Results.UnprocessableEntity("Balance is insufficient for the transaction"),
+
+        TransferResult.Sucess => Results.Accepted("Your transfer happened successfully"),
+
+        _ => Results.BadRequest("Unknown error")
+    };
 });
 app.Run();
