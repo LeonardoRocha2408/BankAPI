@@ -76,4 +76,21 @@ public class UserServices
         }
         return TransferResult.Sucess;
     }
+    public async Task<DeleteAccountResult> DeleteAccount(User CurrentUser, string Username, string PasswordLogin)
+    {
+        User? userToDelete = await _context.Users
+            .Where(user => user.Username.Equals(Username) && user.PasswordLogin.Equals(PasswordLogin))
+            .FirstOrDefaultAsync();
+
+
+        if (userToDelete?.Id != CurrentUser.Id)
+        {
+            return DeleteAccountResult.AccountNotFound;
+        }
+
+        _context.Remove(userToDelete);
+        CurrentUser = new User();
+        _context.SaveChanges();
+        return DeleteAccountResult.AccountDeletedSuccessfully;
+    }
 }

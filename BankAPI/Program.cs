@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using BankShared;
 using BankAPI.Entities;
 using BankAPI.Methods;
@@ -34,9 +35,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-User? CurrentUser = null;
+User CurrentUser = new User();
 
-app.MapPost("/users/create-account", async (CreateAccountRequest request, UserServices user) =>
+app.MapPost("/users/create-account", async ([FromBody] CreateAccountRequest request, UserServices user) =>
 {
     var userCreated = await user.CreateAccount(request.Username, request.PasswordLogin, request.PasswordTransaction);
 
@@ -48,7 +49,7 @@ app.MapPost("/users/create-account", async (CreateAccountRequest request, UserSe
     return Results.Accepted("Account created successfully");
 });
 
-app.MapPost("/users/login", async (LoginRequest request, UserServices user) =>
+app.MapPost("/users/login", async ([FromBody] LoginRequest request, UserServices user) =>
 {
     var userLogin = await user.LoginAccount(request.Username, request.PasswordLogin);
 
@@ -60,7 +61,7 @@ app.MapPost("/users/login", async (LoginRequest request, UserServices user) =>
     return Results.Ok("Login successfully"); 
 });
 
-app.MapPatch("/users/transfer-money", async (TransferMoneyRequest request, UserServices user) =>
+app.MapPatch("/users/transfer-money", async ([FromBody] TransferMoneyRequest request, UserServices user) =>
 {
     TransferResult result = await user.TransferMoney(CurrentUser, request.MoneyToTransfer, request.UserToTransfer, request.PasswordTransaction);
 
@@ -79,6 +80,22 @@ app.MapPatch("/users/transfer-money", async (TransferMoneyRequest request, UserS
         TransferResult.Sucess => Results.Accepted("Your transfer happened successfully"),
 
         _ => Results.BadRequest("Unknown error")
+    };
+});
+
+app.MapDelete("/users/delete", async ([FromBody] DeleteAccountRequest request, UserServices user) => 
+{
+    DeleteAccountResult result = await user.DeleteAccount(CurrentUser, request.Username, request.PasswordLogin);
+
+    if (CurrentUser == null)
+    {
+        return Results.Unauthorized();
+    }
+    return result switch
+    {
+        DeleteAccountResult.AccountNotFound => Results.BadRequest("Data is not correct"),
+        DeleteAccountResult.AccountDeletedSuccessfully => Results.Accepted("Account delete with successfully"),
+        _ => Results.BadRequest("Unknow error")
     };
 });
 app.Run();
